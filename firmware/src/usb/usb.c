@@ -35,12 +35,9 @@ int _write(int file, char *ptr, int len)
 
 int _read (int file, char *ptr, int len)
 {
-	if (file == 0) {
-		if (usbrw_read_nonblock (_stdout))		
-			return usbrw_read (_stdout, ptr, len);
-		else
-			return 0;
-	}
+	if (file == 0)
+		return usbrw_read_nonblock (_stdout) ? 
+							usbrw_read (_stdout, ptr, len) : 0;	
 
 	errno = EIO;
 	return -1;
