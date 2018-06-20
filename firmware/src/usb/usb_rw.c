@@ -34,7 +34,7 @@ static void _tx_data_cb (struct usbrw *inst)
 		usbd_ep_write_packet (inst->usbd_dev, inst->tx_ep, &inst->_fifo.tx_buf [inst->_fifo.tx_consume], len);
 		inst->_fifo.tx_consume = (inst->_fifo.tx_consume + len) & USB_RINGBUFFER_MASK_TX;
 	} else		
-		inst->_fifo.tx_cts = 1;		/* Nothing to transmit, allowing direct call */
+		inst->_fifo.tx_cts = 1;		/* Nothing to transmit, allowing direct call  */
 }
 
 static void _usbrw_write (usbrw_t *inst, char *buf, uint8_t len)
