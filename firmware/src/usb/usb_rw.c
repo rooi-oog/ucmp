@@ -21,10 +21,12 @@ static void _tx_data_cb (struct usbrw *inst)
 	len = inst->_fifo.tx_produce - inst->_fifo.tx_consume;	
 	
 	/* Check for overlap */
-	if (len < 0)
-	/* Limit message length down to 64 bytes */
-		len = LIMIT_MAX (64, len + USB_RINGBUFFER_SIZE_TX);
-	else
+	if (len < 0) {
+		usbd_ep_write_packet (inst->usbd_dev, inst->tx_ep, &inst->_fifo.tx_buf [inst->_fifo.tx_consume], 
+			USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_consume);
+		inst->_fifo.tx_consume = 0;
+		return;
+	} else
 		len = LIMIT_MAX (64, len);		
 	
 	if (len) {
