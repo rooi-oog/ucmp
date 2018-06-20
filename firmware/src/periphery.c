@@ -2,6 +2,8 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/i2c.h>
+#include <libopencm3/stm32/spi.h>
+#include <libopencm3/stm32/usart.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/nvic.h>
 
@@ -33,6 +35,27 @@ void usb_setup (void)
 	usb_cdcacm_init ();
 }
 
+void uart_setup ()
+{	
+	rcc_periph_clock_enable (RCC_USART1);
+	
+	nvic_enable_irq (NVIC_USART1_IRQ);						// USART1 interrupt enable	
+	
+	/* Setup UART parameters. */
+	usart_set_baudrate (USART1, 115200);
+	usart_set_databits (USART1, 8);
+	usart_set_stopbits (USART1, USART_STOPBITS_1);
+	usart_set_parity (USART1, USART_PARITY_NONE);
+	usart_set_flow_control (USART1, USART_FLOWCONTROL_NONE);
+	usart_set_mode (USART1, USART_MODE_TX_RX);
+
+	/* Enable USART1 Receive interrupt. */
+	USART_CR1(USART1) |= USART_CR1_RXNEIE | USART_CR1_TCIE;
+
+	/* Finally enable the USART. */
+	usart_enable (USART1);
+}
+
 void gpio_setup (void)
 {
 	/* Single LED onboard :( */
@@ -45,6 +68,14 @@ void gpio_setup (void)
 	/* PWM output */
 	gpio_set_mode (GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, 
 					GPIO6 | GPIO7 | GPIO8 | GPIO9);
+	
+	/* USART1 pins */
+	gpio_set_mode (GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO9);
+	gpio_set_mode (GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO10);
+	
+	/* Check if USB<->UART mode */
+	gpio_set_mode (GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO0);
+	gpio_set (GPIOB, GPIO0);
 		
 	/* LED off */	
 	gpio_set (GPIOC, GPIO13);	
@@ -91,6 +122,45 @@ void i2c_setup (void)
 
 	/* If everything is configured -> enable the peripheral. */
 	i2c_peripheral_enable (I2C2);
+}
+
+void spi_setup(void) {
+
+	/* Enable clocks for SPI2 */
+	rcc_periph_clock_enable (RCC_SPI2);
+	
+	/* Configure GPIOs: SS=PB12, SCK=PB13, MISO=PB14 and MOSI=PB15 */
+	gpio_set_mode (GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, 
+			GPIO12 | GPIO13 | GPIO15 );
+
+	gpio_set_mode (GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO14);
+
+	/* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
+	spi_reset (SPI2);
+
+	/* Set up SPI in Master mode with:
+	* Clock baud rate: 1/64 of peripheral clock frequency
+	* Clock polarity: Idle High
+	* Clock phase: Data valid on 2nd clock pulse
+	* Data frame format: 8-bit
+	* Frame format: MSB First
+	*/
+	spi_init_master (SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_64, SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE,
+		          SPI_CR1_CPHA_CLK_TRANSITION_2, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+
+	/*
+	* Set NSS management to software.
+	*
+	* Note:
+	* Setting nss high is very important, even if we are controlling the GPIO
+	* ourselves this bit needs to be at least set to 1, otherwise the spi
+	* peripheral will not send any data out.
+	*/
+	spi_enable_software_slave_management (SPI2);
+	spi_set_nss_high (SPI2);
+
+	/* Enable SPI2 periph. */
+	spi_enable (SPI2);
 }
 
 void pwm_setup () 

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "usb_rw.h"
 
+#include <libopencm3/stm32/gpio.h>
+
 #define LIMIT_MAX(l,a)	(a > l ? l : a)
 
 static void _rx_data_cb (struct usbrw *inst)
@@ -19,22 +21,22 @@ static void _tx_data_cb (struct usbrw *inst)
 	
 	/* Calc message length */
 	len = inst->_fifo.tx_produce - inst->_fifo.tx_consume;	
-	
+
 	/* Check for overlap */
 	if (len < 0) {
-		usbd_ep_write_packet (inst->usbd_dev, inst->tx_ep, &inst->_fifo.tx_buf [inst->_fifo.tx_consume], 
-			USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_consume);
-		inst->_fifo.tx_consume = 0;
-		return;
-	} else
-		len = LIMIT_MAX (64, len);		
-	
-	if (len) {
-		/* Send message by usb */
+		len = LIMIT_MAX (64, USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_consume);
 		usbd_ep_write_packet (inst->usbd_dev, inst->tx_ep, &inst->_fifo.tx_buf [inst->_fifo.tx_consume], len);
 		inst->_fifo.tx_consume = (inst->_fifo.tx_consume + len) & USB_RINGBUFFER_MASK_TX;
+		return;
+	}
+	
+	if ((len = LIMIT_MAX (64, len))) {
+		/* Send message by usb */
+		usbd_ep_write_packet (inst->usbd_dev, inst->tx_ep, &inst->_fifo.tx_buf [inst->_fifo.tx_consume], len);
+		inst->_fifo.tx_consume = (inst->_fifo.tx_consume + len) & USB_RINGBUFFER_MASK_TX;		
 	} else		
-		inst->_fifo.tx_cts = 1;		/* Nothing to transmit, allowing direct call  */
+		inst->_fifo.tx_cts = 1;		/* Nothing to transmit, allowing direct call */
+
 }
 
 static void _usbrw_write (usbrw_t *inst, char *buf, uint8_t len)
@@ -44,7 +46,7 @@ static void _usbrw_write (usbrw_t *inst, char *buf, uint8_t len)
 		/* Split the message to prevent memory corruption */
 		memcpy (&inst->_fifo.tx_buf [inst->_fifo.tx_produce], buf, USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_produce);
 		memcpy (&inst->_fifo.tx_buf [0], &buf [USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_produce],
-			len - (USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_produce));
+			len - (USB_RINGBUFFER_SIZE_TX - inst->_fifo.tx_produce));		
 	} else {
 		memcpy (&inst->_fifo.tx_buf [inst->_fifo.tx_produce], buf, len);
 	}	

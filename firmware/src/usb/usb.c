@@ -134,6 +134,8 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 	return USBD_REQ_NOTSUPP;
 }
 
+extern void xxx (usbd_device *usbd_dev, uint8_t ep);
+
 static void comp_set_config(usbd_device *dev, uint16_t wValue)
 {
 	(void) wValue;

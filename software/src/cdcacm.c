@@ -154,7 +154,8 @@ void write_to_device (char *port, device_t *dev, char *buf)
 	/* Write buf content to eeprom */
 	write (ttyfd, buf, dev->size);
 	/* Mandatory delay according to tWR */
-	usleep (15 * (dev->size / dev->page) * 1000);
+	if (strcmp (dev->type, "I2C") == 0)
+		usleep (15 * (dev->size / dev->page) * 1000);
 	check_for_error (ttyfd);
 	
 	cdcacm_close (ttyfd);

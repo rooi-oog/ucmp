@@ -11,7 +11,10 @@
 #include "cmsis_dap/DAP_config.h"
 #include "cmsis_dap/DAP.h"
 #include "usb/usb_rw.h"
+#include "uart/uart.h"
 #include "main.h"
+
+extern usbd_device *usbd_dev;
 
 void sys_tick_handler () {
 	time++;
@@ -34,9 +37,12 @@ static void select_device (char *buf)
 
 static void read_from_device (device_t *dev)
 {
-	uint8_t *buf = malloc (dev->size);	
+	uint8_t *buf = malloc (dev->size);
 	
-	if (i2c_read_page (0, buf, dev->size)) {
+	bool (*read_page) (uint32_t, uint8_t *, uint32_t) = 
+		strcmp (dev->type, "SPI") == 0 ? spi_read_page : i2c_read_page;
+	
+	if (read_page (0, buf, dev->size)) {
 		response (true);
 		write (STDOUT, buf, dev->size);
 	} else
@@ -53,17 +59,20 @@ static void write_to_device (device_t *dev)
 	
 	while ((len += read (STDIN, &buf [len], dev->size)) != dev->size);
 	
-	/* Write goes by decided page length. */
-	for (uint16_t i = 0; i < dev->size; i += dev->page) {
-		if (!(ret = i2c_write_page (i, &buf [i], dev->page)))
-			break;
-		
-		/* Prevent IDWG trigger while writing large size eeprom */
-		iwdg_reset ();
-		
-		/* Mandatory delay between write cycles */
-		delay_ms (10);
-	}
+	if (strcmp (dev->type, "I2C") == 0) {
+		/* Write goes by decided page length. */
+		for (uint16_t i = 0; i < dev->size; i += dev->page) {
+			if (!(ret = i2c_write_page (i, &buf [i], dev->page)))
+				break;
+			
+			/* Prevent IDWG trigger while writing large size eeprom */
+			iwdg_reset ();
+			
+			/* Mandatory delay between write cycles */
+			delay_ms (10);
+		}
+	} else 
+		ret = spi_write_page (0, buf, dev->size);
 
 	response (ret);
 	free (buf);	
@@ -111,11 +120,11 @@ static void analog_get (void)
 	response (false);
 }
 
-void usb_command_handler (void)
+static void usb_command_handler (void)
 {
 	char buf [64];
 	
-	iwdg_reset ();
+	iwdg_reset ();		
 	
 	/* Swiss-knife section */
 	if (read (STDIN, buf, 64) > 0)
@@ -172,6 +181,22 @@ void usb_command_handler (void)
 	}
 }
 
+static void usb_to_uart (void)
+{	
+	char c;
+	
+	iwdg_reset ();	
+	if (read (STDIN, &c, 1) > 0) {		
+		uart_write (c);		
+	}
+		
+	if (uart_read_nonblock ()) {				
+		c = uart_read ();
+		write (STDOUT, &c, 1);
+	}
+
+}
+
 void main (void)
 {
 	device = (device_t *) malloc (sizeof (device_t));
@@ -179,7 +204,9 @@ void main (void)
 	clock_setup ();
 	gpio_setup ();
 	usb_setup ();
+	uart_setup ();
 	i2c_setup ();
+	spi_setup ();
 	pwm_setup ();
 	systick_setup ();
 	/* Configure JTAG pins according to CMSIS-DAP Hardware pins support table
@@ -192,7 +219,10 @@ void main (void)
 	/* Starting IWDG by default 512ms period */
 	iwdg_start ();
 	
+	/* Check if USB<->UART mode or not */
+	void (*handler) (void) = (gpio_get (GPIOB, GPIO0) == 0) ? usb_to_uart : usb_command_handler;
+	
 	while (1) {
-		usb_command_handler ();
+		handler ();
 	}
 }

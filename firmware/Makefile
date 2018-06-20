@@ -52,7 +52,7 @@ cpu			:= $(shell echo $(CPU) | tr A-Z a-z)
 
 # ------------------------------------------------------------------------------------------- #
 # Programm name
-PROG_NAME	:= stm32_template
+PROG_NAME	:= ucmp
 
 # where built files will be stored
 TARGET_DIR	:= build
@@ -68,7 +68,7 @@ LIBUSB_DIR := libusb
 OBJS		+= $(patsubst %.c, %.o, $(shell find -L src -type f -name "*.c"))
 
 # Optimization / debug flags
-OPT			:= -Og -g
+OPT			:= -O3 #-Og -g
 
 # Common C and Linker flags
 FLAGS		:= $(MCPU) $(OPT) -mthumb -fmessage-length=0 -fsigned-char 
@@ -127,10 +127,7 @@ $(TARGET): $(OBJS)
 clean:
 	@echo "Cleaning..."
 	@rm -rf $(OBJS)
-	@rm -rf $(TARGET_DIR)/$(TARGET)
-	@rm -rf $(TARGET_DIR)/$(PROG_NAME).map
-	@rm -rf $(TARGET_DIR)/$(PROG_NAME).bin
-	@rm -rf $(TARGET_DIR)/$(PROG_NAME).asm	
+	@rm -rf $(TARGET_DIR)/*
 	
 .PHONY:
 	all clean pgm debug

@@ -75,7 +75,7 @@ int main (int argc, char *argv[])
 			fwrite (ucmp.prg.read (args.port, ucmp.prg.dev), 1, ucmp.prg.dev->size, stdout);
 		} else if (args.write) {
 			char *buf = malloc (ucmp.prg.dev->size);
-			fread (buf, 1, ucmp.prg.dev->size, stdin);
+			fread (buf, 1, ucmp.prg.dev->size, stdin);			
 			ucmp.prg.write (args.port, ucmp.prg.dev, buf);
 			free (buf);
 		}
