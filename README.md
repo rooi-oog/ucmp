@@ -1,6 +1,7 @@
 # Universal mCu based Multi Protocol communication device
 
-Pinout:
+Pinout
+------
 	PA0-PA7	-> GPIO [7:0]
 	PA9     -> UART TX
 	PA10    -> UART RX
