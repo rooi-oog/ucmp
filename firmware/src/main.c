@@ -59,6 +59,8 @@ static void write_to_device (device_t *dev)
 	
 	while ((len += read (STDIN, &buf [len], dev->size)) != dev->size);
 	
+	iwdg_reset ();
+	
 	if (strcmp (dev->type, "I2C") == 0) {
 		/* Write goes by decided page length. */
 		for (uint16_t i = 0; i < dev->size; i += dev->page) {
