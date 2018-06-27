@@ -52,7 +52,7 @@ static void read_from_device (device_t *dev)
 }
 
 static void write_to_device (device_t *dev)
-{
+{	
 	uint8_t *buf = malloc (dev->size);
 	uint16_t len = 0;
 	bool ret = false;	
@@ -137,7 +137,7 @@ static void usb_command_handler (void)
 		case 'r':
 			read_from_device (device);
 			break;
-		case 'w':
+		case 'w':			
 			write_to_device (device);
 			break;
 		case 'p':
@@ -216,7 +216,8 @@ void main (void)
 	// Mandatory delay (unsure about mandatory :)
 	delay_ms (100);
 	
-	/* Starting IWDG by default 512ms period */
+	/* Starting IWDG at 2500ms period */
+	iwdg_set_period_ms (2500);
 	iwdg_start ();
 	
 	/* Check if USB<->UART mode or not */

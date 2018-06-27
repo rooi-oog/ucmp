@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/usb/usbd.h>
+#include <libopencm3/usb/cdc.h>
 #include "uart.h"
 
 static char rx_buf [UART_RINGBUFFER_SIZE_RX];
@@ -11,6 +13,40 @@ static char tx_buf [UART_RINGBUFFER_SIZE_TX];
 static unsigned int tx_produce;
 static unsigned int tx_consume;
 static volatile int tx_cts;
+
+void usbuart_set_line_coding (struct usb_cdc_line_coding *coding)
+{	
+	usart_set_baudrate (USART1, coding->dwDTERate);
+
+	if (coding->bParityType)
+		usart_set_databits (USART1, coding->bDataBits + 1);
+	else
+		usart_set_databits (USART1, coding->bDataBits);
+
+	switch (coding->bCharFormat) {
+	case 0:
+		usart_set_stopbits (USART1, USART_STOPBITS_1);
+		break;
+	case 1:
+		usart_set_stopbits (USART1, USART_STOPBITS_1_5);
+		break;
+	case 2:
+		usart_set_stopbits (USART1, USART_STOPBITS_2);
+		break;
+	}
+
+	switch (coding->bParityType) {
+	case 0:
+		usart_set_parity (USART1, USART_PARITY_NONE);
+		break;
+	case 1:
+		usart_set_parity (USART1, USART_PARITY_ODD);
+		break;
+	case 2:
+		usart_set_parity (USART1, USART_PARITY_EVEN);
+		break;
+	}
+}
 
 void usart1_isr (void)
 {	

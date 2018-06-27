@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define TTY_SPEED	B4000000
+#define TTY_SPEED	B115200
 
 typedef struct
 {

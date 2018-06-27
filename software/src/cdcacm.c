@@ -32,7 +32,8 @@ static int cdcacm_open (char *port)
 	options.c_cflag &= ~PARENB;								// disable the parity check
 	options.c_cflag &= ~CSTOPB;								// 1 stop bit
 	options.c_cflag &= ~CRTSCTS;								// disable hardware flow control
-	options.c_iflag &= ~(IXON | IXOFF | IXANY | IGNBRK);		// disable software flow control
+	options.c_iflag &= ~(IXON | IXOFF | IXANY | 
+		IGNBRK | INLCR | ICRNL);							// disable software flow control
 	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);		// select raw input
 	options.c_oflag &= ~OPOST;								// select raw output
 
@@ -47,10 +48,10 @@ static void cdcacm_close (int ttyfd)
 	close (ttyfd);
 }
 
-static int read_nonblock (int fd, char *buf, size_t count)
+static int read_nonblock (int fd, char *buf, size_t count, size_t time_wait_ms)
 {
 	int n, watchdog = 0;
-	while ((n = read (fd, buf, count)) <= 0 && watchdog < 1000)	{
+	while ((n = read (fd, buf, count)) <= 0 && watchdog < time_wait_ms * 10) {
 		usleep (100);
 		watchdog++;
 	}
@@ -67,7 +68,7 @@ static void check_for_error (int fd)
 {
 	char resp [4];
 
-	if (!read_nonblock (fd, resp, 4)) {
+	if (read_nonblock (fd, resp, 4, 10000) <= 0) {
 		fprintf (stderr, "No response from device\n");
 		exit (EXIT_FAILURE);
 	}
@@ -98,7 +99,7 @@ static uint8_t property_get (char *port, char cmd)
 	check_for_error (ttyfd);
 	
 	uint8_t n, value;
-	if ((n = read_nonblock (ttyfd, &value, 1)) <= 0) {
+	if ((n = read_nonblock (ttyfd, &value, 1, 1000)) <= 0) {
 		fprintf (stderr, "No response from device\n");
 		exit (EXIT_FAILURE);
 	}
@@ -116,6 +117,7 @@ char *read_from_device (char *port, device_t *dev)
 	/* Send DEVICE cmd to MCU */
 	write (ttyfd, (char *) dev, sizeof (device_t));
 	check_for_error (ttyfd);
+	
 	/* Send READ cmd to MCU */
 	write (ttyfd, "r", 1);
 	check_for_error (ttyfd);
@@ -125,7 +127,7 @@ char *read_from_device (char *port, device_t *dev)
 	
 	/* Read eeprom content */
 	while (len < dev->size) {
-		if ((n = read_nonblock (ttyfd, &buf [len], dev->size)) <= 0) {
+		if ((n = read_nonblock (ttyfd, &buf [len], dev->size, 1000)) <= 0) {
 			fprintf (stderr, "No response from device\n");
 			exit (EXIT_FAILURE);
 		}
@@ -145,17 +147,16 @@ void write_to_device (char *port, device_t *dev, char *buf)
 	/* Send DEVICE cmd to MCU */
 	write (ttyfd, (char *) dev, sizeof (device_t));
 	check_for_error (ttyfd);
-	check_for_error (ttyfd);
-	
+
 	/* Send READ cmd to MCU */
 	write (ttyfd, "w", 1);
-	check_for_error (ttyfd);
 	
 	/* Write buf content to eeprom */
 	write (ttyfd, buf, dev->size);
 	/* Mandatory delay according to tWR */
 	if (strcmp (dev->type, "I2C") == 0)
 		usleep (15 * (dev->size / dev->page) * 1000);
+		
 	check_for_error (ttyfd);
 	
 	cdcacm_close (ttyfd);

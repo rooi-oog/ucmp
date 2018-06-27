@@ -68,7 +68,7 @@ LIBUSB_DIR := libusb
 OBJS		+= $(patsubst %.c, %.o, $(shell find -L src -type f -name "*.c"))
 
 # Optimization / debug flags
-OPT			:= -O3 #-Og -g
+OPT			:= -Og -g
 
 # Common C and Linker flags
 FLAGS		:= $(MCPU) $(OPT) -mthumb -fmessage-length=0 -fsigned-char 

@@ -130,8 +130,10 @@ void spi_setup(void) {
 	rcc_periph_clock_enable (RCC_SPI2);
 	
 	/* Configure GPIOs: SS=PB12, SCK=PB13, MISO=PB14 and MOSI=PB15 */
+	gpio_set_mode (GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+			GPIO12);
 	gpio_set_mode (GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, 
-			GPIO12 | GPIO13 | GPIO15 );
+			GPIO13 | GPIO15 );
 
 	gpio_set_mode (GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO14);
 
@@ -145,8 +147,8 @@ void spi_setup(void) {
 	* Data frame format: 8-bit
 	* Frame format: MSB First
 	*/
-	spi_init_master (SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_64, SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE,
-		          SPI_CR1_CPHA_CLK_TRANSITION_2, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+	spi_init_master (SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+		          SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
 
 	/*
 	* Set NSS management to software.
@@ -158,6 +160,8 @@ void spi_setup(void) {
 	*/
 	spi_enable_software_slave_management (SPI2);
 	spi_set_nss_high (SPI2);
+	
+	gpio_set (GPIOB, GPIO12);
 
 	/* Enable SPI2 periph. */
 	spi_enable (SPI2);

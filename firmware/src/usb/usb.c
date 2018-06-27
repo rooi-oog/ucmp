@@ -12,6 +12,8 @@
 #include "usb_desc.h"
 #include "usb_rw.h"
 
+extern void usbuart_set_line_coding (struct usb_cdc_line_coding *coding);
+
 /* Buffer used for control requests. */
 uint8_t usbd_control_buffer [128];
 
@@ -120,21 +122,20 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 			notif->wLength = 2;
 			local_buf[8] = req->wValue & 3;
 			local_buf[9] = 0;
-			// usbd_ep_write_packet(0x83, buf, 10);
+			usbd_ep_write_packet(usbd_dev, 0x83, local_buf, 10);
 			return USBD_REQ_HANDLED;
-			}
+		}
 		case USB_CDC_REQ_SET_LINE_CODING:
 			if (*len < sizeof(struct usb_cdc_line_coding))
 				return USBD_REQ_NOTSUPP;
-
+				
+			usbuart_set_line_coding ((struct usb_cdc_line_coding *) *buf);
 			return USBD_REQ_HANDLED;
 		}
 	}
 	
 	return USBD_REQ_NOTSUPP;
 }
-
-extern void xxx (usbd_device *usbd_dev, uint8_t ep);
 
 static void comp_set_config(usbd_device *dev, uint16_t wValue)
 {
