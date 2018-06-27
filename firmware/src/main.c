@@ -211,6 +211,7 @@ void main (void)
 	spi_setup ();
 	pwm_setup ();
 	systick_setup ();
+	
 	/* Configure JTAG pins according to CMSIS-DAP Hardware pins support table
 	 * described in DAP_config.h */ 
 	DAP_SETUP ();
@@ -223,7 +224,7 @@ void main (void)
 	iwdg_start ();
 	
 	/* Check if USB<->UART mode or not */
-	void (*handler) (void) = (gpio_get (GPIOB, GPIO0) == 0) ? usb_to_uart : usb_command_handler;
+	void (*handler) (void) = (gpio_get (GPIOA, GPIO15) == 0) ? usb_to_uart : usb_command_handler;
 	
 	while (1) {
 		handler ();

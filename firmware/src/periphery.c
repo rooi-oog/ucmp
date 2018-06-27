@@ -74,8 +74,8 @@ void gpio_setup (void)
 	gpio_set_mode (GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO10);
 	
 	/* Check if USB<->UART mode */
-	gpio_set_mode (GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO0);
-	gpio_set (GPIOB, GPIO0);
+	gpio_set_mode (GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO15);
+	gpio_set (GPIOA, GPIO15);
 		
 	/* LED off */	
 	gpio_set (GPIOC, GPIO13);	

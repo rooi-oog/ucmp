@@ -14,5 +14,5 @@ Pinout
 	PB14    -> SPI MISO
 	PB15    -> SPI MOSI
 	
-if PB0 == 0 then this device acts as USB<->UART transceiver
+if PA15 == 0 then this device acts as USB<->UART transceiver
 	
