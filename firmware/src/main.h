@@ -5,10 +5,6 @@
 #define STDOUT	1
 #define STDERR	2
 
-#define PWM1_P		TIM4_CCR1
-#define PWM1_N		TIM4_CCR2
-#define PWM2_P		TIM4_CCR3
-#define PWM2_N		TIM4_CCR4
 
 typedef struct
 {	
@@ -27,10 +23,6 @@ struct pwm
 };
 
 device_t *device;
-struct pwm pwm [] = { 
-	{(uint32_t *) &PWM1_P, (uint32_t *) &PWM1_N}, 
-	{(uint32_t *) &PWM2_P, (uint32_t *) &PWM2_N} 
-};
 volatile uint32_t time = 0;
 
 
