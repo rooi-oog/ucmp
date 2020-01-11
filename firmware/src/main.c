@@ -12,7 +12,7 @@
 extern usbd_device *usbd_dev;
 
 void delay_us (uint32_t delay) {	
-	register uint32_t cnt = 7 * delay;
+	register uint32_t cnt = 7 * delay;	// number 7 was calculated experimentally
 	while (cnt-- > 0)
 		asm ("");
 }
@@ -37,12 +37,7 @@ static void read_from_device (device_t *dev)
 {
 	uint8_t *buf = malloc (dev->size);
 	
-	
-	bool (*read_page) (uint32_t, uint8_t *, uint32_t) = 
-		//strcmp (dev->type, "SPI") == 0 ? spi_read_page : i2c_read_page;
-		i2c_read_page;
-		
-	if (read_page (0, buf, dev->size)) {		
+	if (i2c_read_page (0, buf, dev->size)) {		
 		response (true);
 		write (STDOUT, buf, dev->size);
 	} else {		
@@ -51,8 +46,6 @@ static void read_from_device (device_t *dev)
 		
 	free (buf);
 }
-
-volatile uint16_t ii;
 
 static void write_to_device (device_t *dev)
 {	
@@ -64,15 +57,14 @@ static void write_to_device (device_t *dev)
 	
 	if (strcmp (dev->type, "I2C") == 0) {
 		/* Write goes by decided page length. */
-		for (ii = 0; ii < dev->size; ii += dev->page) {
-			if (!(ret = i2c_write_page (ii, &buf [ii], dev->page)))
+		for (uint32_t i = 0; i < dev->size; i += dev->page) {
+			if (!(ret = i2c_write_page (i, &buf [i], dev->page)))
 				break;
 			
 			/* Mandatory delay between write cycles */
 			delay_ms (10);
 		}
 	} else 
-		//ret = spi_write_page (0, buf, dev->size);
 		ret = 0;
 
 	response (ret);
